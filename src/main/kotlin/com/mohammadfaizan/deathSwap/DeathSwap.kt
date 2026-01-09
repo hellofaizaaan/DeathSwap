@@ -14,6 +14,7 @@ class DeathSwap : JavaPlugin() {
         saveDefaultConfig()
 
         server.pluginManager.registerEvents(DeathListener(), this)
+        server.pluginManager.registerEvents(PlayerListener(), this)
         getCommand("deathswap")?.setExecutor(DeathSwapCommand())
 
         logger.info("DeathSwap has been enabled!")

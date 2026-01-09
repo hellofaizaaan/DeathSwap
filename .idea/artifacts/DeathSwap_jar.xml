@@ -1,0 +1,12 @@
+<component name="ArtifactManager">
+  <artifact type="jar" name="DeathSwap:jar">
+    <output-path>$PROJECT_DIR$/out/artifacts/DeathSwap_jar</output-path>
+    <root id="archive" name="Death Swap.jar">
+      <element id="module-output" name="Death_Swap.main" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains/annotations/13.0/919f0dfe192fb4e063e7dacadee7f8bb9a2672a9/annotations-13.0.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk7/2.3.20-Beta1/dff25a774390b30256be5eef72c22f8737945ad4/kotlin-stdlib-jdk7-2.3.20-Beta1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib/2.3.20-Beta1/4747390fd8d9de1b004654c60ab80ddff4cc7da1/kotlin-stdlib-2.3.20-Beta1.jar" path-in-jar="/" />
+      <element id="extracted-dir" path="$USER_HOME$/.gradle/caches/modules-2/files-2.1/org.jetbrains.kotlin/kotlin-stdlib-jdk8/2.3.20-Beta1/b126ab50310fb321e98d148cbb821f13194df83f/kotlin-stdlib-jdk8-2.3.20-Beta1.jar" path-in-jar="/" />
+    </root>
+  </artifact>
+</component>

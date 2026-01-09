@@ -44,3 +44,13 @@ tasks.processResources {
         expand(props)
     }
 }
+
+tasks.shadowJar {
+    archiveClassifier.set("")
+    mergeServiceFiles()
+
+    dependencies {
+        include(dependency("org.jetbrains.kotlin:kotlin-stdlib-jdk8"))
+        include(dependency("org.jetbrains.kotlin:kotlin-stdlib"))
+    }
+}

@@ -49,7 +49,7 @@ object GameManager {
         round = 1
         players.clear()
 
-        Bukkit.broadcastMessage("§a\\uD83D\\uDFE2 Death Swap started!")
+        Bukkit.broadcastMessage("§aDeath Swap game started!")
 
         for (player in Bukkit.getOnlinePlayers()) {
             players[player.uniqueId] = PlayerData(
@@ -75,8 +75,8 @@ object GameManager {
         if (showBossBar) {
             bossBar = Bukkit.createBossBar("Death Swap - Time Left: ${formatTime(timeLeft)}", BarColor.GREEN, BarStyle.SOLID)
 
-            players.keys.forEach { uuid ->
-                Bukkit.getPlayer(uuid)?.let { player ->
+            players.values.filter { it.isAlive }.forEach { playerData ->
+                Bukkit.getPlayer(playerData.uuid)?.let { player ->
                     bossBar?.addPlayer(player)
                 }
             }
@@ -96,15 +96,17 @@ object GameManager {
             halfTimeAnnouncement = config.getBoolean("halfway-announcement", false)
             if (halfTimeAnnouncement) {
                 if (!halfTimeAnnounced && timeLeft <= roundTimeTotal / 2) {
-                    Bukkit.broadcastMessage("§e\\u23F1 Half time! §6\${formatTime(timeLeft)} §eremaining.")
+                    Bukkit.broadcastMessage("§eHalf time! §6${formatTime(timeLeft)} §eremaining.")
                     // PLay a sound to all players
-                    players.keys.forEach { uuid ->
-                        Bukkit.getPlayer(uuid)?.playSound(
-                            Bukkit.getPlayer(uuid)?.location ?: return@forEach,
-                            Sound.BLOCK_NOTE_BLOCK_PLING,
-                            1.0f,
-                            1.0f
-                        )
+                    players.values.filter { it.isAlive }.forEach { playerData ->
+                        Bukkit.getPlayer(playerData.uuid)?.let { player ->
+                            player.playSound(
+                                player.location,
+                                Sound.BLOCK_NOTE_BLOCK_PLING,
+                                1.0f,
+                                1.0f
+                            )
+                        }
                     }
                     halfTimeAnnounced = true
                 }
@@ -113,7 +115,7 @@ object GameManager {
             if (timeLeft in 1..10 && timeLeft != lastSecondAnnounced) {
                 lastSecondAnnounced = timeLeft
 
-                players.values.forEach { data ->
+                players.values.filter { it.isAlive }.forEach { data ->
                     val player = Bukkit.getPlayer(data.uuid) ?: return@forEach
                     val pitch = 0.5f + (11 - timeLeft) * 0.1f
                     player.playSound(player.location, Sound.BLOCK_NOTE_BLOCK_PLING, 1.0f, pitch)
@@ -158,7 +160,7 @@ object GameManager {
         currentTimer = null
         removeBossBar()
 
-        Bukkit.broadcastMessage("§c\\u26D4 Death Swap has been ended by an op.")
+        Bukkit.broadcastMessage("§cDeath Swap has been ended by an op.")
 
         players.clear()
         round = 1
@@ -190,8 +192,8 @@ object GameManager {
                     bar.removePlayer(player)
                 }
             }
-            players.keys.forEach { uuid ->
-                Bukkit.getPlayer(uuid)?.let { player ->
+            players.values.filter { it.isAlive }.forEach { playerData ->
+                Bukkit.getPlayer(playerData.uuid)?.let { player ->
                     if (!bar.players.contains(player)) {
                         bar.addPlayer(player)
                     }
@@ -207,12 +209,25 @@ object GameManager {
         }
         updateBossBarPlayers()
 
-        if (players.isEmpty() && state == GameState.RUNNING) {
-            Bukkit.broadcastMessage("§cAll players have left the game. Ending the game.")
+        val aliveCount = players.values.count { it.isAlive }
+        if (aliveCount == 0 && state == GameState.RUNNING) {
+            Bukkit.broadcastMessage("§cAll players have died! Ending the game.")
             state = GameState.ENDED
             currentTimer?.cancel()
             currentTimer = null
             removeBossBar()
+            cleanup()
+        } else if (aliveCount == 1 && state == GameState.RUNNING) {
+            val winner = players.values.firstOrNull { it.isAlive }
+            winner?.let {
+                val winnerPlayer = Bukkit.getPlayer(it.uuid)
+                Bukkit.broadcastMessage("§a§l${winnerPlayer?.name} is the last player standing!")
+                state = GameState.ENDED
+                currentTimer?.cancel()
+                currentTimer = null
+                removeBossBar()
+                cleanup()
+            }
         }
     }
 
@@ -223,8 +238,9 @@ object GameManager {
         val playerData = players.remove(playerUuid) ?: return
 
         bossBar?.removePlayer(player)
+        val aliveCount = players.values.count { it.isAlive }
 
-        if (players.isEmpty()) {
+        if (aliveCount == 0) {
             Bukkit.broadcastMessage("§cGame ended - no players remaining.")
             state = GameState.ENDED
             currentTimer?.cancel()
@@ -233,14 +249,16 @@ object GameManager {
             return
         }
 
-        if (players.size == 1) {
-            val remainingPlayer = Bukkit.getPlayer(players.values.first().uuid)
-            remainingPlayer?.sendMessage("§aYou are the last player standing!")
-            Bukkit.broadcastMessage("§a${remainingPlayer?.name} is the last player standing!")
-            state = GameState.ENDED
-            currentTimer?.cancel()
-            currentTimer = null
-            removeBossBar()
+        if (aliveCount == 1) {
+            val remainingPlayer = players.values.firstOrNull { it.isAlive }
+            remainingPlayer?.let {
+                val winnerPlayer = Bukkit.getPlayer(it.uuid)
+                Bukkit.broadcastMessage("§a§l${winnerPlayer?.name} is the last player standing and wins!")
+                state = GameState.ENDED
+                currentTimer?.cancel()
+                currentTimer = null
+                removeBossBar()
+            }
             return
         }
 
@@ -256,9 +274,10 @@ object GameManager {
 
         updateBossBarPlayers()
 
-        Bukkit.broadcastMessage("§c\u26A0 $playerName has disconnected and is removed from the game.")
+        Bukkit.broadcastMessage("§c$playerName has disconnected and is removed from the game.")
+        val aliveCount = players.values.count { it.isAlive }
 
-        if (players.isEmpty()) {
+        if (aliveCount == 0) {
             Bukkit.broadcastMessage("§cAll players have left the game. Ending the game.")
             state = GameState.ENDED
             currentTimer?.cancel()
@@ -268,14 +287,17 @@ object GameManager {
         }
 
         // Last player standing
-        if (players.size == 1) {
-            val remainingPlayer = Bukkit.getPlayer(players.values.first().uuid)
-            remainingPlayer?.sendMessage("§aYou are the last player standing!")
-            Bukkit.broadcastMessage("§a${remainingPlayer?.name} is the last player standing thus a WINNER!")
-            state = GameState.ENDED
-            currentTimer?.cancel()
-            currentTimer = null
-            removeBossBar()
+        if (aliveCount == 1) {
+            val remainingPlayer = players.values.firstOrNull { it.isAlive }
+            remainingPlayer?.let {
+                val winnerPlayer = Bukkit.getPlayer(it.uuid)
+                winnerPlayer?.sendMessage("§aYou are the last player standing!")
+                Bukkit.broadcastMessage("§a§l${winnerPlayer?.name} is the last player standing and wins!")
+                state = GameState.ENDED
+                currentTimer?.cancel()
+                currentTimer = null
+                removeBossBar()
+            }
             return
         }
     }
@@ -295,10 +317,14 @@ object GameManager {
             .toMutableList()
 
         if (alivePlayers.size < 2) {
-            Bukkit.broadcastMessage("§cNot enough players to swap.")
-            if (alivePlayers.size < 2) {
+            if (alivePlayers.size == 1) {
                 val winner = alivePlayers.first()
-                Bukkit.broadcastMessage("§a§l${winner.name} is the last player standing!")
+                Bukkit.broadcastMessage("§a§l${winner.name} is the last player standing and wins!")
+                state = GameState.ENDED
+                cleanup()
+            } else {
+                Bukkit.broadcastMessage("§cNo players remaining. Game ended.")
+                state = GameState.ENDED
                 cleanup()
             }
             return
@@ -328,6 +354,21 @@ object GameManager {
                 }
             }
         }
-        Bukkit.broadcastMessage("§a\\u21C4 Players have been swapped!")
+
+        // Check the alive players count after swap
+        val remainingAlive = players.values.count { it.isAlive }
+        if (remainingAlive <= 1) {
+            val winnerData = players.values.firstOrNull { it.isAlive }
+            val winnerPlayer = winnerData?.let { Bukkit.getPlayer(it.uuid) }
+            if (winnerPlayer != null) {
+                Bukkit.broadcastMessage("§a§l${winnerPlayer.name} is the last player standing and wins!")
+            } else {
+                Bukkit.broadcastMessage("§cNo players remaining. Game ended.")
+            }
+            state = GameState.ENDED
+            cleanup()
+        } else {
+            Bukkit.broadcastMessage("§ePlayers have been swapped!")
+        }
     }
 }

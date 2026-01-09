@@ -15,17 +15,16 @@ class DeathSwapCommand: CommandExecutor {
         if (command.name.equals("deathswap", ignoreCase = true)) {
 
             if (args.isEmpty()) {
-                sender.sendMessage("§cUsage: /deathswap <start|stop|status|quit>")
+                sender.sendMessage("§cUsage: /deathswap [ start | stop | status | quit ]")
                 return true
             }
 
             when (args[0].lowercase()) {
                 "start" -> {
                     if (GameManager.state == GameManager.GameState.RUNNING) {
-                        sender.sendMessage("§cThe game is already running.")
+                        sender.sendMessage("§cA Death Swap game is already running.")
                     } else {
                         GameManager.startGame()
-                        sender.sendMessage("§aDeath Swap game started!")
                     }
                     return true
                 }
@@ -35,7 +34,6 @@ class DeathSwapCommand: CommandExecutor {
                         sender.sendMessage("§cNo game is currently running.")
                     } else {
                         GameManager.endGame()
-                        sender.sendMessage("§aDeath Swap game stopped.")
                     }
                     return true
                 }
@@ -51,7 +49,6 @@ class DeathSwapCommand: CommandExecutor {
                         val playerUUID: UUID = sender.uniqueId
                         if (GameManager.players.containsKey(playerUUID)) {
                             GameManager.quitGame(playerUUID)
-                            sender.sendMessage("§aYou have quit the Death Swap game.")
                         } else {
                             sender.sendMessage("§cYou are not part of the Death Swap game.")
                         }
@@ -61,7 +58,7 @@ class DeathSwapCommand: CommandExecutor {
                 }
 
                 else -> {
-                    sender.sendMessage("§cUnknown subcommand. Usage: /deathswap <start|stop|status>")
+                    sender.sendMessage("§cUnknown subcommand. Usage: /deathswap < start | stop | status | quit >")
                     return true
                 }
             }
