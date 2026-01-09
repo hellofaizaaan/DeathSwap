@@ -15,7 +15,10 @@ class DeathSwap : JavaPlugin() {
 
         server.pluginManager.registerEvents(DeathListener(), this)
         server.pluginManager.registerEvents(PlayerListener(), this)
-        getCommand("deathswap")?.setExecutor(DeathSwapCommand())
+        val command = getCommand("deathswap")
+        val executor = DeathSwapCommand()
+        command?.setExecutor(executor)
+        command?.tabCompleter = executor
 
         logger.info("DeathSwap has been enabled!")
     }

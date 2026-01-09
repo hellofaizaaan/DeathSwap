@@ -263,7 +263,7 @@ object GameManager {
         }
 
         // Multiple players still in game - continue
-        Bukkit.broadcastMessage("§e${player.name} has quit the game. ${players.size} players remaining.")
+        Bukkit.broadcastMessage("§e${player.name} has quit the game. $aliveCount players remaining.")
     }
 
     fun handlePlayerDisconnect(playerUuid: UUID) {

@@ -20,14 +20,14 @@ class DeathListener: Listener {
 
             if (aliveCount == 0) {
                 Bukkit.broadcastMessage("§cAll players have died! No winners this round.")
-                GameManager.state == GameManager.GameState.ENDED
+                GameManager.state = GameManager.GameState.ENDED
                 GameManager.cleanup()
             } else if (aliveCount == 1) {
                 val winner = GameManager.players.values.firstOrNull { it.isAlive }
                 winner?.let {
                     val winnerPlayer = Bukkit.getPlayer(it.uuid)
                     Bukkit.broadcastMessage("§a§l${winnerPlayer?.name} is the last player standing!")
-                    GameManager.state == GameManager.GameState.ENDED
+                    GameManager.state = GameManager.GameState.ENDED
                     GameManager.cleanup()
                 }
             } else {
