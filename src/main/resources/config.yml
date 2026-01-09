@@ -1,0 +1,3 @@
+round-time: 300 # Time in seconds for each round
+allow-bossbar: false # Enable or disable bossbar display
+halfway-announcement: false # Announce when half the time has passed

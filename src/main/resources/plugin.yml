@@ -1,0 +1,9 @@
+name: DeathSwap
+version: '1.0-SNAPSHOT'
+main: com.mohammadfaizan.deathSwap.DeathSwap
+api-version: '1.21'
+commands:
+  deathswap:
+    description: Start a DeathSwap game
+    usage: /<command> [start|stop|leave]
+    aliases: [ds]
