@@ -34,6 +34,12 @@ tasks {
         dependsOn(shadowJar)
     }
 
+    // Keep the thin jar out of the way so `shadowJar` owns the clean
+    // "<name>-<version>.jar" artifact that CI publishes to Releases.
+    jar {
+        archiveClassifier.set("dev")
+    }
+
     processResources {
         val props = mapOf("version" to version)
         inputs.properties(props)

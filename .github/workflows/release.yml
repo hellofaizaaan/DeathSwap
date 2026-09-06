@@ -1,0 +1,77 @@
+name: Build & Release
+
+# Builds the plugin on every push to the default branch. When the project
+# version in build.gradle.kts changes to one that has no matching `v<version>`
+# git tag yet, it cuts a GitHub Release and attaches the built jar.
+#
+# So: normal pushes just run a build (CI check); to publish, bump `version`
+# in build.gradle.kts and push. Re-run manually from the Actions tab too.
+
+on:
+  push:
+    branches: [main, master]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # need full history so tag lookup works
+
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '25'  # Wayham / older plugins: set to 17
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: '9.7.1'  # used when no wrapper jar is committed
+
+      - name: Build
+        run: gradle build --no-daemon --stacktrace
+
+      - name: Read project version
+        id: meta
+        run: |
+          VERSION="$(gradle -q --console=plain properties | awk -F': ' '/^version:/ {print $2}')"
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+          echo "slug=${GITHUB_REPOSITORY##*/}" >> "$GITHUB_OUTPUT"
+          echo "Project version: $VERSION"
+
+      - name: Check whether this version is already released
+        id: tag
+        run: |
+          if git rev-parse "v${{ steps.meta.outputs.version }}" >/dev/null 2>&1; then
+            echo "exists=true" >> "$GITHUB_OUTPUT"
+            echo "Tag v${{ steps.meta.outputs.version }} already exists - skipping release."
+          else
+            echo "exists=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Stage jar
+        if: steps.tag.outputs.exists == 'false'
+        run: |
+          JAR="$(find build/libs -maxdepth 1 -name '*.jar' \
+                   ! -name '*-dev.jar' ! -name '*-sources.jar' ! -name '*-javadoc.jar' \
+                   -printf '%s\t%p\n' | sort -rn | head -n1 | cut -f2-)"
+          if [ -z "$JAR" ]; then echo "::error::no jar produced in build/libs"; ls -la build/libs; exit 1; fi
+          mkdir -p dist
+          cp "$JAR" "dist/${{ steps.meta.outputs.slug }}-${{ steps.meta.outputs.version }}.jar"
+          echo "Staged: $(ls dist)"
+
+      - name: Create GitHub Release
+        if: steps.tag.outputs.exists == 'false'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: v${{ steps.meta.outputs.version }}
+          name: ${{ steps.meta.outputs.slug }} v${{ steps.meta.outputs.version }}
+          generate_release_notes: true
+          files: dist/*.jar
