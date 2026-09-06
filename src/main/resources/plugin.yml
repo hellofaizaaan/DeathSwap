@@ -1,7 +1,7 @@
 name: DeathSwap
-version: '1.0-SNAPSHOT'
+version: '${version}'
 main: com.mohammadfaizan.deathSwap.DeathSwap
-api-version: '1.21'
+api-version: '26.2'
 commands:
   deathswap:
     description: Start a DeathSwap game
